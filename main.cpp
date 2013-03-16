@@ -42,7 +42,7 @@ int main(int argc, char ** argv)
 
 	for (i = 0; i < (int)list.size(); i++)
 	{
-		if (lsOutput::totalRow(list[i])) { cout << '"' << list[i] << "\"\n"; }
+		if (!lsOutput::isMod(list[i])) { cout << '"' << list[i] << "\"\n"; }
 	}
 
 	return 0;

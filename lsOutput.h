@@ -9,6 +9,22 @@
 class lsOutput
 {
 	public:
+	static bool isMod(const std::string& input)
+	{
+		if (input.length() < 10) { return false; }
+		else if (input[0] != 'd' && input[0] != '-') { return false; }
+		else if (input[1] != 'r' && input[1] != '-') { return false; }
+		else if (input[2] != 'w' && input[2] != '-') { return false; }
+		else if (input[3] != 'x' && input[3] != '-') { return false; }
+		else if (input[4] != 'r' && input[4] != '-') { return false; }
+		else if (input[5] != 'w' && input[5] != '-') { return false; }
+		else if (input[6] != 'x' && input[6] != '-') { return false; }
+		else if (input[7] != 'r' && input[7] != '-') { return false; }
+		else if (input[8] != 'w' && input[8] != '-') { return false; }
+		else if (input[9] != 'x' && input[9] != '-') { return false; }
+		return true;
+	}
+
 	static bool whitespace(char input)
 	{
 		if (input == ' ' || input == '\t' || input == '\r' || input == '\n')
@@ -24,14 +40,10 @@ class lsOutput
 
 		for (i = 0; i < (int)input.length(); i++)
 		{
-			if (first == -1 && !whitespace(input[i]))
-			{
-				first = i;
-			}
-			if (!whitespace(input[i]))
-			{
-				last = i;
-			}
+			if (first == -1 && !whitespace(input[i])) { first = i; }
+			if (!whitespace(input[i])) { last = i; }
+			if (first == -1 && input[i] == '\\') { first = i; }
+			if (input[i] == '\\') { last = i + 1;  i++; }
 		}
 
 		if (first == -1) { return ""; }
