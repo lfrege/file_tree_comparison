@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include "lsOutput.h"
 
 using namespace std;
 
@@ -28,14 +29,21 @@ bool readAll(const string& filename, string& output)
 
 int main(int argc, char ** argv)
 {
+	int i;
 	string output;
+	vector<string> list;
 
 	if (argc > 1)
 	{
 		readAll(argv[1], output);
 	}
 
-	cout << output;
-	
+	list = lsOutput::getPieces(output, '\n');
+
+	for (i = 0; i < (int)list.size(); i++)
+	{
+		if (lsOutput::totalRow(list[i])) { cout << '"' << list[i] << "\"\n"; }
+	}
+
 	return 0;
 }
