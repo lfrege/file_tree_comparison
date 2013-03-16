@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include "lsOutput.h"
+#include "execLs.h"
 
 using namespace std;
 
@@ -30,30 +31,36 @@ bool readAll(const string& filename, string& output)
 int main(int argc, char ** argv)
 {
 	int i;
-	string output;
-	vector<string> list;
-	lsOutput ls("/dir1/dir2/dir3", "../dir4");
+	string dir1, dir2;
+	vector<string> list1, list2;
 
-	if (argc > 1)
+	if (argc != 3)
 	{
-		readAll(argv[1], output);
+		cerr << "Error: 2 arguments required." << endl;
+		return -1;
 	}
 
-	list = lsOutput::getPieces(output, '\n');
+	lsOutput ls1(execLs::CWD(), argv[1]);
+	lsOutput ls2(execLs::CWD(), argv[2]);
 
-	for (i = 0; i < (int)list.size(); i++)
+	dir1 = execLs::dirContents(argv[1]);
+	dir2 = execLs::dirContents(argv[2]);
+
+	list1 = lsOutput::getPieces(dir1, '\n');
+
+	for (i = 0; i < (int)list1.size(); i++)
 	{
-		if (lsOutput::isDir(list[i]))
+		if (lsOutput::isDir(list1[i]))
 		{
-			ls.addDirectory(list[i]);
+			ls1.addDirectory(list1[i]);
 		}
-		else if (lsOutput::isMod(list[i]))
+		else if (lsOutput::isMod(list1[i]))
 		{
-			ls.addFile(list[i]);
+			ls1.addFile(list1[i]);
 		}
 	}
 
-	cout << ls.toString() << endl;
+	cout << ls1.toString() << endl;
 
 	return 0;
 }
