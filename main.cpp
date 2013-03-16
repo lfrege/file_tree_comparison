@@ -32,6 +32,7 @@ int main(int argc, char ** argv)
 	int i;
 	string output;
 	vector<string> list;
+	lsOutput ls("/dir1/dir2/dir3", "../dir4");
 
 	if (argc > 1)
 	{
@@ -42,8 +43,17 @@ int main(int argc, char ** argv)
 
 	for (i = 0; i < (int)list.size(); i++)
 	{
-		if (!lsOutput::isMod(list[i])) { cout << '"' << list[i] << "\"\n"; }
+		if (lsOutput::isDir(list[i]))
+		{
+			ls.addDirectory(list[i]);
+		}
+		else if (lsOutput::isMod(list[i]))
+		{
+			ls.addFile(list[i]);
+		}
 	}
+
+	cout << ls.toString() << endl;
 
 	return 0;
 }
