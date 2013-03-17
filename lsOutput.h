@@ -202,6 +202,15 @@ class lsOutput
 			return date + ", " + size +  ", " + name;
 		}
 
+		std::string diff(const fileRow& rhs) const
+		{
+			std::string output = name + "=";
+
+			if (date != rhs.date) { output += "(" +date + "-" + rhs.date + ")"; }
+			if (size != rhs.size) { output += "(" +size + "-" + rhs.size + ")"; }
+			return output;
+		}
+
 		bool operator<(const fileRow& rhs) const { return name < rhs.name; }
 		bool operator>(const fileRow& rhs) const { return name > rhs.name; }
 		bool operator==(const fileRow& rhs) const { return name == rhs.name && size == rhs.size && date == rhs.date; }
@@ -265,7 +274,10 @@ class lsOutput
 
 			for (i = 0; i < (int)files.size(); i++)
 			{
-				output += "cp " + execLs::escapify(absPath() + "/" + files[i].getName()) + " " + execLs::escapify(dest + "/" + files[i].getName()) + "\n";
+				if (files[i].isFile())
+				{
+					output += "cp -p " + execLs::escapify(absPath() + "/" + files[i].getName()) + " " + execLs::escapify(dest + "/" + files[i].getName()) + "\n";
+				}
 			}
 
 			return output;
@@ -280,12 +292,12 @@ class lsOutput
 			{
 				if (i == (int) files.size() && rhs.files[j].isFile())
 				{
-					output += "rm -f " + execLs::escapify(rhs.absPath() + "/" + rhs.files[j].getName()) + "\n";
+					output += "#rm -f " + execLs::escapify(rhs.absPath() + "/" + rhs.files[j].getName()) + "\n";
 					j++;
 				}
 				else if (j == (int) rhs.files.size() && files[i].isFile())
 				{
-					output += "cp " + execLs::escapify(absPath() + "/" + files[i].getName()) + " " + execLs::escapify(rhs.absPath() + "/" + files[i].getName()) + "\n";
+					output += "cp -p " + execLs::escapify(absPath() + "/" + files[i].getName()) + " " + execLs::escapify(rhs.absPath() + "/" + files[i].getName()) + "\n";
 					i++;
 				}
 				else if (i != (int)files.size() && !files[i].isFile()) { i++; }
@@ -294,16 +306,23 @@ class lsOutput
 				{
 					if (files[i] < rhs.files[j])
 					{
-						output += "cp " + execLs::escapify(absPath() + "/" + files[i].getName()) + " " + execLs::escapify(rhs.absPath() + "/" + files[i].getName()) + "\n";
+						output += "cp -p " + execLs::escapify(absPath() + "/" + files[i].getName()) + " " + execLs::escapify(rhs.absPath() + "/" + files[i].getName()) + "\n";
 						i++;
 					}
 					else if (files[i] > rhs.files[j])
 					{
-						output += "rm -f " + execLs::escapify(rhs.absPath() + "/" + rhs.files[j].getName()) + "\n";
+						output += "#rm -f " + execLs::escapify(rhs.absPath() + "/" + rhs.files[j].getName()) + "\n";
 						j++;
 					}
 					else if (files[i] == rhs.files[j])
 					{
+						i++;
+						j++;
+					}
+					else
+					{
+						std::cerr << files[i].diff(rhs.files[j]) << std::endl;
+						output += "cp -p " + execLs::escapify(absPath() + "/" + files[i].getName()) + " " + execLs::escapify(rhs.absPath() + "/" + files[i].getName()) + "\n";
 						i++;
 						j++;
 					}

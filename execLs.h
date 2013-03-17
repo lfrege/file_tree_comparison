@@ -17,6 +17,15 @@ class execLs
 			if (input[i] == ' ') output += "\\ ";
 			else if (input[i] == '{') output += "\\{";
 			else if (input[i] == '}') output += "\\}";
+			else if (input[i] == '(') output += "\\(";
+			else if (input[i] == ')') output += "\\)";
+			else if (input[i] == '\'') output += "\\\'";
+			else if (input[i] == '"') output += "\\\"";
+			else if (input[i] == '&') output += "\\&";
+			else if (input[i] == ',') output += "\\,";
+			else if (input[i] == '$') output += "\\$";
+			else if (input[i] == '`') output += "\\`";
+			else if (input[i] == ';') output += "\\;";
 			else output += input[i];
 		}
 
