@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <sstream>
+#include "execLs.h"
 
 class lsOutput
 {
@@ -16,16 +17,21 @@ class lsOutput
 		public:
 		std::vector<std::string> path;
 
-		void load(const std::string& cwd, const std::string& dir)
+		void load(const std::string& cwd, const std::string& indir)
 		{
 			int i;
+			std::string dir;
+
+			if (indir[indir.length()-1] == ':') { dir = indir.substr(0,indir.length()-1); }
+			else { dir = indir; }
+
 			std::vector<std::string> cwdv = getPieces(cwd, '/');
 			std::vector<std::string> dirv = getPieces(dir, '/');
 			wd = cwd;
 
 			path.clear();
 
-			if (dir.length() > 0 && dir[0] != '/')
+			if (dir.length() == 0 || dir[0] != '/')
 			{
 				for (i = 0; i < (int)cwdv.size(); i++)
 				{
@@ -47,7 +53,7 @@ class lsOutput
 		std::string toString() const
 		{
 			int i;
-			std::string output;
+			std::string output = "";
 
 			for (i = 0; i < (int)path.size(); i++)
 			{
@@ -214,7 +220,8 @@ class lsOutput
 		{
 			cwd = incwd;
 			root = inroot;
-			head.load(cwd, dir);
+			if (dir != "") { head.load(cwd, dir); }
+			else { head.load(cwd, root); }
 		}
 
 		void addFile(const std::string& newfile)
@@ -225,7 +232,7 @@ class lsOutput
 		std::string toString() const
 		{
 			int i;
-			std::string output = (head - root) + "\n";
+			std::string output = absPath() + "\n";
 
 			for (i = 0; i < (int)files.size(); i++)
 			{
@@ -251,6 +258,19 @@ class lsOutput
 			return relPath() == rhs.relPath();
 		}
 
+		std::string fullCopy(const std::string& dest) const
+		{
+			int i;
+			std::string output;
+
+			for (i = 0; i < (int)files.size(); i++)
+			{
+				output += "cp " + execLs::escapify(absPath() + "/" + files[i].getName()) + " " + execLs::escapify(dest + "/" + files[i].getName()) + "\n";
+			}
+
+			return output;
+		}
+
 		std::string operator-(const dirBody& rhs) const
 		{
 			int i = 0, j = 0;
@@ -260,12 +280,12 @@ class lsOutput
 			{
 				if (i == (int) files.size() && rhs.files[j].isFile())
 				{
-					output += "rm -rf " + rhs.head.toString() + "/" + rhs.files[j].getName() + "\n";
+					output += "rm -f " + execLs::escapify(rhs.absPath() + "/" + rhs.files[j].getName()) + "\n";
 					j++;
 				}
 				else if (j == (int) rhs.files.size() && files[i].isFile())
 				{
-					output += "cp " + head.toString() + "/" + files[i].getName() + "\n";
+					output += "cp " + execLs::escapify(absPath() + "/" + files[i].getName()) + " " + execLs::escapify(rhs.absPath() + "/" + files[i].getName()) + "\n";
 					i++;
 				}
 				else if (i != (int)files.size() && !files[i].isFile()) { i++; }
@@ -274,12 +294,12 @@ class lsOutput
 				{
 					if (files[i] < rhs.files[j])
 					{
-						output += "cp " + head.toString() + "/" + files[i].getName() + "\n";
+						output += "cp " + execLs::escapify(absPath() + "/" + files[i].getName()) + " " + execLs::escapify(rhs.absPath() + "/" + files[i].getName()) + "\n";
 						i++;
 					}
 					else if (files[i] > rhs.files[j])
 					{
-						output += "rm -rf " + rhs.head.toString() + "/" + rhs.files[j].getName() + "\n";
+						output += "rm -f " + execLs::escapify(rhs.absPath() + "/" + rhs.files[j].getName()) + "\n";
 						j++;
 					}
 					else if (files[i] == rhs.files[j])
@@ -450,7 +470,8 @@ class lsOutput
 			}
 			else if (j == (int)rhs.directory.size())
 			{
-				output += "mkdir " + rhs.directory[0].absPath() + directory[i].relPath() + "\n";
+				output += "mkdir " + execLs::escapify(rhs.directory[0].absPath() + "/" + directory[i].relPath()) + "\n";
+				output += directory[i].fullCopy(rhs.directory[0].absPath() + "/" + directory[i].relPath());
 				i++;
 			}
 			else if (directory[i] == rhs.directory[j])
@@ -461,7 +482,8 @@ class lsOutput
 			}
 			else if (directory[i] < rhs.directory[j])
 			{
-				output += "mkdir " + rhs.directory[0].absPath() + directory[i].relPath() + "\n";
+				output += "mkdir " + execLs::escapify(rhs.directory[0].absPath() + "/" + directory[i].relPath()) + "\n";
+				output += directory[i].fullCopy(rhs.directory[0].absPath() + "/" + directory[i].relPath());
 				i++;
 			}
 			else { j++; }
@@ -472,8 +494,8 @@ class lsOutput
 
 	lsOutput(const std::string& incwd, const std::string& inroot)
 	{
-		root = inroot;
-		cwd = incwd;
+		root = trim(inroot);
+		cwd = trim(incwd);
 		addDirectory("");
 	}
 
