@@ -7,6 +7,22 @@
 class execLs
 {
 	public:
+	static std::string escapify(const std::string& input)
+	{
+		int i;
+		std::string output;
+
+		for (i = 0; i < (int)input.length(); i++)
+		{
+			if (input[i] == ' ') output += "\\ ";
+			else if (input[i] == '{') output += "\\{";
+			else if (input[i] == '}') output += "\\}";
+			else output += input[i];
+		}
+
+		return output;
+	}
+
 	static std::string exec(const std::string& cmd)
 	{
 		FILE* pipe = popen(cmd.c_str(), "r");
@@ -37,7 +53,7 @@ class execLs
 
 	static std::string dirContents(const std::string& dir)
 	{
-		return exec("ls -lAhR " + dir);
+		return exec("ls -lAhR " + escapify(dir));
 	} 
 };
 

@@ -11,6 +11,8 @@ class lsOutput
 	public:
 	class dirHeader
 	{
+		std::string wd;
+
 		public:
 		std::vector<std::string> path;
 
@@ -19,6 +21,7 @@ class lsOutput
 			int i;
 			std::vector<std::string> cwdv = getPieces(cwd, '/');
 			std::vector<std::string> dirv = getPieces(dir, '/');
+			wd = cwd;
 
 			path.clear();
 
@@ -49,6 +52,33 @@ class lsOutput
 			for (i = 0; i < (int)path.size(); i++)
 			{
 				output += "/" + path[i];
+			}
+
+			return output;
+		}
+
+		std::string operator-(const std::string& rhs) const
+		{
+			int i;
+			std::string output;
+			dirHeader temp;
+			temp.load(wd, rhs);
+
+			for (i = 0; i < (int)path.size() && i < (int)temp.path.size(); i++)
+			{
+				if (path[i] != temp.path[i])
+				{
+					return toString();
+				}
+			}
+
+			for (; i < (int)path.size(); i++)
+			{
+				output += path[i];
+				if (i+1 < (int)path.size())
+				{
+					output += '/';
+				}
 			}
 
 			return output;
@@ -133,7 +163,7 @@ class lsOutput
 				}
 				else if (mode == MODE_NAME)
 				{
-					name = input.substr(namestart, input.length() - namestart);
+					name = trim(input.substr(namestart, input.length() - namestart));
 					mode++;
 				}
 			}
@@ -145,6 +175,11 @@ class lsOutput
 		fileRow(const std::string& input)
 		{
 			parse(input);
+		}
+
+		std::string getName() const
+		{
+			return name;
 		}
 
 		bool isFile() const
@@ -160,19 +195,25 @@ class lsOutput
 		{
 			return date + ", " + size +  ", " + name;
 		}
+
+		bool operator<(const fileRow& rhs) const { return name < rhs.name; }
+		bool operator>(const fileRow& rhs) const { return name > rhs.name; }
+		bool operator==(const fileRow& rhs) const { return name == rhs.name && size == rhs.size && date == rhs.date; }
 	};
 
 	class dirBody
 	{
 		dirHeader head;
 		std::string cwd;
+		std::string root;
 		std::vector<fileRow> files;
 
 		public:
 
-		dirBody(const std::string& incwd, const std::string& dir)
+		dirBody(const std::string& incwd, const std::string& inroot, const std::string& dir)
 		{
 			cwd = incwd;
+			root = inroot;
 			head.load(cwd, dir);
 		}
 
@@ -184,13 +225,68 @@ class lsOutput
 		std::string toString() const
 		{
 			int i;
-			std::string output = head.toString() + "\n";
+			std::string output = (head - root) + "\n";
 
 			for (i = 0; i < (int)files.size(); i++)
 			{
 				if (files[i].isFile())
 				{
 					output += "\t" + files[i].toString() + "\n";
+				}
+			}
+
+			return output;
+		}
+
+		std::string relPath() const { return head-root; }
+		std::string absPath() const { return head.toString(); }
+
+		bool operator<(const dirBody& rhs) const
+		{
+			return relPath() < rhs.relPath();
+		}
+
+		bool operator==(const dirBody& rhs) const
+		{
+			return relPath() == rhs.relPath();
+		}
+
+		std::string operator-(const dirBody& rhs) const
+		{
+			int i = 0, j = 0;
+			std::string output;
+
+			while (i < (int)files.size() || j < (int)rhs.files.size())
+			{
+				if (i == (int) files.size() && rhs.files[j].isFile())
+				{
+					output += "rm -rf " + rhs.head.toString() + "/" + rhs.files[j].getName() + "\n";
+					j++;
+				}
+				else if (j == (int) rhs.files.size() && files[i].isFile())
+				{
+					output += "cp " + head.toString() + "/" + files[i].getName() + "\n";
+					i++;
+				}
+				else if (i != (int)files.size() && !files[i].isFile()) { i++; }
+				else if (j != (int)rhs.files.size() && !rhs.files[j].isFile()) { j++; }
+				else
+				{
+					if (files[i] < rhs.files[j])
+					{
+						output += "cp " + head.toString() + "/" + files[i].getName() + "\n";
+						i++;
+					}
+					else if (files[i] > rhs.files[j])
+					{
+						output += "rm -rf " + rhs.head.toString() + "/" + rhs.files[j].getName() + "\n";
+						j++;
+					}
+					else if (files[i] == rhs.files[j])
+					{
+						i++;
+						j++;
+					}
 				}
 			}
 
@@ -333,12 +429,45 @@ class lsOutput
 
 	void addDirectory(const std::string& newdir)
 	{
-		directory.push_back(dirBody(cwd, newdir));
+		directory.push_back(dirBody(cwd, root, newdir));
 	}
 
 	void addFile(const std::string& newfile)
 	{
 		directory.back().addFile(newfile);
+	}
+
+	std::string operator-(const lsOutput& rhs) const
+	{
+		std::string output;
+		int i = 0, j = 0;
+
+		while (i < (int)directory.size() || j < (int)rhs.directory.size())
+		{
+			if (i == (int)directory.size())
+			{
+				j++;
+			}
+			else if (j == (int)rhs.directory.size())
+			{
+				output += "mkdir " + rhs.directory[0].absPath() + directory[i].relPath() + "\n";
+				i++;
+			}
+			else if (directory[i] == rhs.directory[j])
+			{
+				output += directory[i] - rhs.directory[j];
+				i++;
+				j++;
+			}
+			else if (directory[i] < rhs.directory[j])
+			{
+				output += "mkdir " + rhs.directory[0].absPath() + directory[i].relPath() + "\n";
+				i++;
+			}
+			else { j++; }
+		}
+
+		return output;
 	}
 
 	lsOutput(const std::string& incwd, const std::string& inroot)

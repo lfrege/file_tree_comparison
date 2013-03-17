@@ -60,7 +60,20 @@ int main(int argc, char ** argv)
 		}
 	}
 
-	cout << ls1.toString() << endl;
+	list2 = lsOutput::getPieces(dir2, '\n');
+	for (i = 0; i < (int)list2.size(); i++)
+	{
+		if (lsOutput::isDir(list2[i]))
+		{
+			ls2.addDirectory(list2[i]);
+		}
+		else if (lsOutput::isMod(list2[i]))
+		{
+			ls2.addFile(list2[i]);
+		}
+	}
+
+	cout << ls1 - ls2 << endl;
 
 	return 0;
 }
