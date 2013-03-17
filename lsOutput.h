@@ -190,11 +190,11 @@ class lsOutput
 
 		bool isFile() const
 		{
-			if (permissions.length() == 0 || permissions[0] == 'd')
+			if (permissions.length() > 0 && permissions[0] == '-')
 			{
-				return false;
+				return true;
 			}
-			return true;
+			return false;
 		}
 
 		std::string toString() const
@@ -342,7 +342,7 @@ class lsOutput
 	static bool isMod(const std::string& input)
 	{
 		if (input.length() < 10) { return false; }
-		else if (input[0] != 'd' && input[0] != '-') { return false; }
+		else if (input[0] != 'd' && input[0] != 'l' && input[0] != '-') { return false; }
 		else if (input[1] != 'r' && input[1] != '-') { return false; }
 		else if (input[2] != 'w' && input[2] != '-') { return false; }
 		else if (input[3] != 'x' && input[3] != '-') { return false; }
